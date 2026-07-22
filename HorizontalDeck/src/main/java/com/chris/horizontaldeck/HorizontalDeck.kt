@@ -2,7 +2,10 @@ package com.chris.horizontaldeck
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -17,57 +20,72 @@ import kotlin.math.abs
 @Composable
 fun HorizontalDeck(
     scrollState: ScrollState,
-    viewportWidth: Int,
     modifier: Modifier = Modifier,
     minScale: Float = 0.75f,
     content: @Composable () -> Unit
 ) {
-    Layout(
-        modifier = modifier,
-        content = content
-    ) { measurables, constraints ->
-        // Measure each child with the incoming constraints
-        val placeables = measurables.map { it.measure(constraints) }
+    BoxWithConstraints(modifier = modifier) {
+        val viewportWidth = constraints.maxWidth
 
-        // Calculate total width with 50% overlap
-        var layoutWidth = 0
-        placeables.forEachIndexed { index, placeable ->
-            if (index == 0) {
-                layoutWidth += placeable.width
-            } else {
-                layoutWidth += (placeable.width * 0.5f).toInt()
-            }
-        }
-        layoutWidth = layoutWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
+        Layout(
+            content = content,
+            modifier = Modifier
+                .fillMaxHeight()
+                .horizontalScroll(scrollState)
+        ) { measurables, constraints ->
+            // Measure each child with unconstrained width to respect their preferred size
+            val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val placeables = measurables.map { it.measure(childConstraints) }
 
-        // Calculate layout height as the maximum height of any child
-        val layoutHeight = (placeables.maxOfOrNull { it.height } ?: 0)
-            .coerceIn(constraints.minHeight, constraints.maxHeight)
+            val firstCardWidth = placeables.firstOrNull()?.width ?: 0
+            val lastCardWidth = placeables.lastOrNull()?.width ?: 0
+            
+            // Calculate internal paddings to allow first/last cards to reach center
+            val startPadding = (viewportWidth - firstCardWidth) / 2f
+            val endPadding = (viewportWidth - lastCardWidth) / 2f
 
-        layout(layoutWidth, layoutHeight) {
-            val scrollX = scrollState.value
-            val viewportCenterX = scrollX + viewportWidth / 2f
-
-            var xPosition = 0
-            placeables.forEach { placeable ->
-                // Calculate the center of the item relative to the layout's content
-                val itemCenterX = xPosition + placeable.width / 2f
-                
-                // Calculate distance from viewport center
-                val distanceFromCenter = abs(viewportCenterX - itemCenterX)
-                
-                // Normalize distance to a scale factor (1.0 at center, minScale at edges)
-                // We use half the viewport width as the max distance for scaling effect
-                val maxDistance = viewportWidth / 2f
-                val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
-                val scale = 1f - (fraction * (1f - minScale))
-
-                placeable.placeRelativeWithLayer(x = xPosition, y = 0, zIndex = scale) {
-                    scaleX = scale
-                    scaleY = scale
+            // Calculate content width with 50% overlap
+            var contentWidth = 0
+            placeables.forEachIndexed { index, placeable ->
+                if (index == 0) {
+                    contentWidth += placeable.width
+                } else {
+                    contentWidth += (placeable.width * 0.5f).toInt()
                 }
-                // Next item starts 50% into the current item
-                xPosition += (placeable.width * 0.5f).toInt()
+            }
+
+            // Total layout width includes start padding, overlapped content, and end padding
+            val totalWidth = (startPadding + contentWidth + endPadding).toInt()
+                .coerceAtLeast(constraints.minWidth)
+
+            // Calculate layout height as the maximum height of any child
+            val layoutHeight = (placeables.maxOfOrNull { it.height } ?: 0)
+                .coerceIn(constraints.minHeight, constraints.maxHeight)
+
+            layout(totalWidth, layoutHeight) {
+                val scrollX = scrollState.value
+                val viewportCenterX = scrollX + viewportWidth / 2f
+
+                var xPosition = startPadding.toInt()
+                placeables.forEach { placeable ->
+                    // Calculate the center of the item relative to the layout's content
+                    val itemCenterX = xPosition + placeable.width / 2f
+                    
+                    // Calculate distance from viewport center
+                    val distanceFromCenter = abs(viewportCenterX - itemCenterX)
+                    
+                    // Normalize distance to a scale factor (1.0 at center, minScale at edges)
+                    val maxDistance = viewportWidth / 2f
+                    val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
+                    val scale = 1f - (fraction * (1f - minScale))
+
+                    placeable.placeRelativeWithLayer(x = xPosition, y = 0, zIndex = scale) {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    // Next item starts 50% into the current item
+                    xPosition += (placeable.width * 0.5f).toInt()
+                }
             }
         }
     }
@@ -80,7 +98,6 @@ fun HorizontalDeckPreview() {
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
         HorizontalDeck(
             scrollState = scrollState,
-            viewportWidth = 1000,
             modifier = Modifier.size(width = 400.dp, height = 200.dp)
         ) {
             Box(modifier = Modifier.size(100.dp).background(Color.Red))

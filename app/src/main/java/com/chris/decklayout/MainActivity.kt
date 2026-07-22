@@ -4,10 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chris.decklayout.ui.theme.DeckLayoutTheme
@@ -36,16 +32,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             DeckLayoutTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    BoxWithConstraints(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                        val viewportWidthPx = with(LocalDensity.current) { maxWidth.roundToPx() }
+                    Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                         val scrollState = rememberScrollState()
                         HorizontalDeck(
                             scrollState = scrollState,
-                            viewportWidth = viewportWidthPx,
-                            minScale = 0.6f, // Demonstrating custom minScale
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .horizontalScroll(scrollState)
+                            minScale = 0.6f,
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             val colors = listOf(
                                 Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7),
