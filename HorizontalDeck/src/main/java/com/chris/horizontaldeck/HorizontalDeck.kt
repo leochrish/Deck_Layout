@@ -21,16 +21,21 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 
 @Composable
 fun HorizontalDeck(
     scrollState: ScrollState,
     modifier: Modifier = Modifier,
     minScale: Float = 0.75f,
+    onItemSelected: (Int) -> Unit = {},
     content: @Composable () -> Unit
 ) {
     // Track target scroll positions for snapping
     val snapPoints = remember { mutableStateListOf<Int>() }
+    var lastSelectedIndex by remember { mutableIntStateOf(-1) }
 
     // Snapping logic: Triggered when scrolling stops
     LaunchedEffect(scrollState.isScrollInProgress) {
@@ -38,8 +43,15 @@ fun HorizontalDeck(
             val currentScroll = scrollState.value
             // Find the snap point closest to the current scroll position
             val closestSnapPoint = snapPoints.minByOrNull { abs(it - currentScroll) }
+            val index = snapPoints.indexOf(closestSnapPoint)
+
             if (closestSnapPoint != null && closestSnapPoint != currentScroll) {
                 scrollState.animateScrollTo(closestSnapPoint)
+            }
+
+            if (index != -1 && index != lastSelectedIndex) {
+                lastSelectedIndex = index
+                onItemSelected(index)
             }
         }
     }

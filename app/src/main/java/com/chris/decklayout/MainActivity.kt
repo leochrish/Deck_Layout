@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chris.decklayout.ui.theme.DeckLayoutTheme
@@ -32,11 +34,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             DeckLayoutTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val context = LocalContext.current
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                         val scrollState = rememberScrollState()
                         HorizontalDeck(
                             scrollState = scrollState,
                             minScale = 0.6f,
+                            onItemSelected = { index ->
+                                Toast.makeText(context, "Selected Card: ${index + 1}", Toast.LENGTH_SHORT).show()
+                            },
                             modifier = Modifier.fillMaxSize()
                         ) {
                             val colors = listOf(
