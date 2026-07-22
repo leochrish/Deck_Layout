@@ -25,6 +25,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 
+/**
+ * A custom layout that arranges its children in a horizontal deck with overlapping cards.
+ *
+ * Each child overlaps the previous one by 50%. The layout automatically calculates
+ * internal padding to allow the first and last items to reach the horizontal center
+ * of the viewport. It also features dynamic scaling and z-index adjustments based
+ * on the scroll position, making the centered item appear larger and on top.
+ *
+ * @param scrollState The [ScrollState] used to manage and observe the horizontal scroll position.
+ * @param modifier The modifier to be applied to the layout's viewport. This determines
+ * the size of the deck's visible area.
+ * @param minScale The minimum scale factor (between 0f and 1f) applied to items at the edges
+ * of the viewport. As items move towards the center, they scale up to 1.0f. Defaults to 0.75f.
+ * @param onItemSelected A callback triggered when a card becomes centered after scrolling stops.
+ * Receives the index of the selected (centered) item.
+ * @param content The composable content representing the cards in the deck.
+ */
 @Composable
 fun HorizontalDeck(
     scrollState: ScrollState,
