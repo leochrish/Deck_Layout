@@ -17,6 +17,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateListOf
+
 @Composable
 fun HorizontalDeck(
     scrollState: ScrollState,
@@ -24,6 +29,21 @@ fun HorizontalDeck(
     minScale: Float = 0.75f,
     content: @Composable () -> Unit
 ) {
+    // Track target scroll positions for snapping
+    val snapPoints = remember { mutableStateListOf<Int>() }
+
+    // Snapping logic: Triggered when scrolling stops
+    LaunchedEffect(scrollState.isScrollInProgress) {
+        if (!scrollState.isScrollInProgress && snapPoints.isNotEmpty()) {
+            val currentScroll = scrollState.value
+            // Find the snap point closest to the current scroll position
+            val closestSnapPoint = snapPoints.minByOrNull { abs(it - currentScroll) }
+            if (closestSnapPoint != null && closestSnapPoint != currentScroll) {
+                scrollState.animateScrollTo(closestSnapPoint)
+            }
+        }
+    }
+
     BoxWithConstraints(modifier = modifier) {
         val viewportWidth = constraints.maxWidth
 
@@ -46,12 +66,24 @@ fun HorizontalDeck(
 
             // Calculate content width with 50% overlap
             var contentWidth = 0
+            val tempSnapPoints = mutableListOf<Int>()
+            
             placeables.forEachIndexed { index, placeable ->
+                val xPos = startPadding + contentWidth
+                // A card is centered when scroll = xPos - (viewportWidth - cardWidth) / 2
+                tempSnapPoints.add((xPos - (viewportWidth - placeable.width) / 2f).toInt())
+
                 if (index == 0) {
                     contentWidth += placeable.width
                 } else {
                     contentWidth += (placeable.width * 0.5f).toInt()
                 }
+            }
+
+            // Update global snap points (without triggering unnecessary recomposition during layout)
+            if (snapPoints.size != tempSnapPoints.size || !snapPoints.indices.all { snapPoints[it] == tempSnapPoints[it] }) {
+                snapPoints.clear()
+                snapPoints.addAll(tempSnapPoints)
             }
 
             // Total layout width includes start padding, overlapped content, and end padding
