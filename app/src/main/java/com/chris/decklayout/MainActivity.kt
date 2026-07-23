@@ -5,10 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,11 +41,12 @@ class MainActivity : ComponentActivity() {
                         val scrollState = rememberScrollState()
                         HorizontalDeck(
                             scrollState = scrollState,
-                            minScale = 0.6f,
+                            minScale = 0.65f,
+                            cardSelectionEnabled = true,
                             onItemSelected = { index ->
                                 Toast.makeText(context, "Selected Card: ${index + 1}", Toast.LENGTH_SHORT).show()
                             },
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             val colors = listOf(
                                 Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7),

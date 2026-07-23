@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
  * the size of the deck's visible area.
  * @param minScale The minimum scale factor (between 0f and 1f) applied to items at the edges
  * of the viewport. As items move towards the center, they scale up to 1.0f. Defaults to 0.75f.
+ * @param cardSelectionEnabled A Flag that controls the single card selection behavior. If this is
+ * true then only the [onItemSelected] will be invoked.
  * @param onItemSelected A callback triggered when a card becomes centered after scrolling stops.
  * Receives the index of the selected (centered) item.
  * @param content The composable content representing the cards in the deck.
@@ -47,6 +49,7 @@ fun HorizontalDeck(
     scrollState: ScrollState,
     modifier: Modifier = Modifier,
     minScale: Float = 0.75f,
+    cardSelectionEnabled: Boolean = false,
     onItemSelected: (Int) -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -56,7 +59,7 @@ fun HorizontalDeck(
 
     // Snapping logic: Triggered when scrolling stops
     LaunchedEffect(scrollState.isScrollInProgress) {
-        if (!scrollState.isScrollInProgress && snapPoints.isNotEmpty()) {
+        if (!scrollState.isScrollInProgress && snapPoints.isNotEmpty() && cardSelectionEnabled) {
             val currentScroll = scrollState.value
             // Find the snap point closest to the current scroll position
             val closestSnapPoint = snapPoints.minByOrNull { abs(it - currentScroll) }
@@ -68,7 +71,9 @@ fun HorizontalDeck(
 
             if (index != -1 && index != lastSelectedIndex) {
                 lastSelectedIndex = index
-                onItemSelected(index)
+                if (cardSelectionEnabled) {
+                    onItemSelected(index)
+                }
             }
         }
     }
@@ -79,7 +84,6 @@ fun HorizontalDeck(
         Layout(
             content = content,
             modifier = Modifier
-                .fillMaxHeight()
                 .horizontalScroll(scrollState)
         ) { measurables, constraints ->
             // Measure each child with unconstrained width to respect their preferred size
@@ -88,7 +92,7 @@ fun HorizontalDeck(
 
             val firstCardWidth = placeables.firstOrNull()?.width ?: 0
             val lastCardWidth = placeables.lastOrNull()?.width ?: 0
-            
+
             // Calculate internal paddings to allow first/last cards to reach center
             val startPadding = (viewportWidth - firstCardWidth) / 2f
             val endPadding = (viewportWidth - lastCardWidth) / 2f
@@ -96,7 +100,7 @@ fun HorizontalDeck(
             // Calculate content width with 50% overlap
             var contentWidth = 0
             val tempSnapPoints = mutableListOf<Int>()
-            
+
             placeables.forEachIndexed { index, placeable ->
                 val xPos = startPadding + contentWidth
                 // A card is centered when scroll = xPos - (viewportWidth - cardWidth) / 2
@@ -131,10 +135,10 @@ fun HorizontalDeck(
                 placeables.forEach { placeable ->
                     // Calculate the center of the item relative to the layout's content
                     val itemCenterX = xPosition + placeable.width / 2f
-                    
+
                     // Calculate distance from viewport center
                     val distanceFromCenter = abs(viewportCenterX - itemCenterX)
-                    
+
                     // Normalize distance to a scale factor (1.0 at center, minScale at edges)
                     val maxDistance = viewportWidth / 2f
                     val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
@@ -156,15 +160,35 @@ fun HorizontalDeck(
 @Composable
 fun HorizontalDeckPreview() {
     val scrollState = rememberScrollState()
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         HorizontalDeck(
             scrollState = scrollState,
             modifier = Modifier.size(width = 400.dp, height = 200.dp)
         ) {
-            Box(modifier = Modifier.size(100.dp).background(Color.Red))
-            Box(modifier = Modifier.size(100.dp).background(Color.Green))
-            Box(modifier = Modifier.size(100.dp).background(Color.Blue))
-            Box(modifier = Modifier.size(100.dp).background(Color.Yellow))
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.Red)
+            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.Green)
+            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.Blue)
+            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.Yellow)
+            )
         }
     }
 }
