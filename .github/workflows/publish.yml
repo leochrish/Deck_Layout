@@ -40,6 +40,6 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           curl -u "$SONATYPE_USERNAME:$SONATYPE_PASSWORD" \
-               -X POST "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC" \
+               -X POST "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC&name=HorizontalDeck-Release-${{ github.run_number }}" \
                -H "Accept: application/json" \
                -F "bundle=@bundle.zip"
