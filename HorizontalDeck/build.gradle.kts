@@ -58,7 +58,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "io.github.leochrish"
             artifactId = "horizontal-deck"
-            version = "1.0.2"
+            version = "1.0.3"
 
             afterEvaluate {
                 from(components["release"])
@@ -76,6 +76,7 @@ publishing {
                     license {
                         name.set("The Apache License, Version 2.0")
                         url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                        distribution.set("repo")
                     }
                 }
                 developers {
