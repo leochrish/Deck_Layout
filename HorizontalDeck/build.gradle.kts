@@ -98,20 +98,15 @@ publishing {
 signing {
     val isCi = System.getenv("CI") == "true"
 
+    // 1. ALWAYS bypass Java BouncyCastle and use the native OS terminal GPG
+    useGpgCmd()
+
     if (isCi) {
-        // We are on GitHub: Grab the text key directly from the server's memory
-        val keyId = System.getenv("GPG_KEY_ID")
-        val password = System.getenv("GPG_PASSWORD")
-        val base64Key = System.getenv("GPG_PRIVATE_KEY")
-
-        // Decode the Base64 string back into the raw multiline PGP key
-        val key = String(Base64.getDecoder().decode(base64Key))
-
-        useInMemoryPgpKeys(keyId, key, password)
-        sign(publishing.publications["release"])
-
+        // We are on GitHub: The key was just imported into Ubuntu's native keyring
+        project.extra["signing.gnupg.keyName"] = System.getenv("GPG_KEY_ID")
+        project.extra["signing.gnupg.passphrase"] = System.getenv("GPG_PASSWORD")
     } else {
-        // We are on your Mac: Use the native terminal and local.properties
+        // We are on your Mac: Read from local.properties
         val localProperties = Properties()
         val propsFile = rootProject.file("local.properties")
 
@@ -121,13 +116,12 @@ signing {
             val password = localProperties.getProperty("signing.password")
 
             if (keyId != null && password != null) {
-                useGpgCmd()
-                project.extra["signing.gnupg.executable"] = "/opt/homebrew/bin/gpg"
+                project.extra["signing.gnupg.executable"] = "/opt/homebrew/bin/gpg" // Keep your Mac path
                 project.extra["signing.gnupg.keyName"] = keyId
                 project.extra["signing.gnupg.passphrase"] = password
-
-                sign(publishing.publications["release"])
             }
         }
     }
+
+    sign(publishing.publications["release"])
 }
