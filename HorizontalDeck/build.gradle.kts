@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -101,7 +102,10 @@ signing {
         // We are on GitHub: Grab the text key directly from the server's memory
         val keyId = System.getenv("GPG_KEY_ID")
         val password = System.getenv("GPG_PASSWORD")
-        val key = System.getenv("GPG_PRIVATE_KEY")
+        val base64Key = System.getenv("GPG_PRIVATE_KEY")
+
+        // Decode the Base64 string back into the raw multiline PGP key
+        val key = String(Base64.getDecoder().decode(base64Key))
 
         useInMemoryPgpKeys(keyId, key, password)
         sign(publishing.publications["release"])
