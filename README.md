@@ -17,12 +17,12 @@ A customizable, overlapping card deck layout for Jetpack Compose with dynamic sc
 ### Horizontal Deck
 The `HorizontalDeck` provides a focused swiping experience where the center card "pops" into view.
 
-![Horizontal Deck Demo](https://raw.githubusercontent.com/leochrish/Deck_Layout/main/screenshots/horizontal_demo.png)
+<img width="350" height="264" alt="Screenshot 2026-08-01 at 2 41 39 PM" src="https://github.com/user-attachments/assets/ea9763a5-b77e-406b-ad2b-ae6d72f67838" />
 
 ### Vertical Deck
 The `VerticalDeck` brings the same interactive experience to vertical lists, perfect for full-screen carousels.
 
-![Vertical Deck Demo](https://raw.githubusercontent.com/leochrish/Deck_Layout/main/screenshots/vertical_demo.png)
+<img width="352" height="403" alt="Screenshot 2026-08-01 at 2 42 15 PM" src="https://github.com/user-attachments/assets/7f2cb4f4-2bac-4fd4-a1b3-52b30b4da7fa" />
 
 ## Installation
 
