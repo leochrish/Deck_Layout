@@ -67,15 +67,12 @@ fun VerticalDeck(
     onItemSelected: (Int) -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    // Track target scroll positions for snapping
     val snapPoints = remember { mutableStateListOf<Int>() }
     var lastSelectedIndex by remember { mutableIntStateOf(-1) }
 
-    // Snapping logic: Triggered when scrolling stops
     LaunchedEffect(scrollState.isScrollInProgress) {
         if (!scrollState.isScrollInProgress && snapPoints.isNotEmpty() && cardSelectionEnabled) {
             val currentScroll = scrollState.value
-            // Find the snap point closest to the current scroll position
             val closestSnapPoint = snapPoints.minByOrNull { abs(it - currentScroll) }
             val index = snapPoints.indexOf(closestSnapPoint)
 
@@ -93,7 +90,6 @@ fun VerticalDeck(
     BoxWithConstraints(modifier = modifier) {
         val viewportHeightPx = constraints.maxHeight
 
-        // Box acts as the scrollable viewport, restricted to the modifier's size
         Box(
             modifier = Modifier
                 .size(maxWidth, maxHeight)
@@ -102,42 +98,32 @@ fun VerticalDeck(
             Layout(
                 content = content
             ) { measurables, constraints ->
-                // Measure each child with unconstrained height to respect their preferred size
                 val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
                 val placeables = measurables.map { it.measure(childConstraints) }
 
                 val firstCardHeight = placeables.firstOrNull()?.height ?: 0
                 val lastCardHeight = placeables.lastOrNull()?.height ?: 0
-                
-                // Calculate internal paddings to allow first/last cards to reach center
+
                 val startPadding = (viewportHeightPx - firstCardHeight) / 2f
                 val endPadding = (viewportHeightPx - lastCardHeight) / 2f
 
-                // Calculate snap points and total height with 50% overlap
                 val tempSnapPoints = mutableListOf<Int>()
                 var currentY = startPadding
                 
                 placeables.forEach { placeable ->
-                    // A card is centered when scroll = currentY - (viewportHeightPx - cardHeight) / 2
                     tempSnapPoints.add((currentY - (viewportHeightPx - placeable.height) / 2f).toInt())
 
-                    // Each card overlaps the previous one by 50%
                     currentY += (placeable.height * 0.5f).toInt()
                 }
 
-                // Update global snap points
                 if (snapPoints.size != tempSnapPoints.size || !snapPoints.indices.all { snapPoints[it] == tempSnapPoints[it] }) {
                     snapPoints.clear()
                     snapPoints.addAll(tempSnapPoints)
                 }
 
-                // Total layout height includes start padding, overlapped content, and end padding
-                // currentY already accounts for startPadding and 50% of each card's height.
-                // We need to add the remaining 50% of the last card plus endPadding.
                 val totalHeight = (currentY + (lastCardHeight * 0.5f) + endPadding).toInt()
                     .coerceAtLeast(constraints.minHeight)
 
-                // Calculate layout width as the maximum width of any child
                 val layoutWidth = (placeables.maxOfOrNull { it.width } ?: 0)
                     .coerceIn(constraints.minWidth, constraints.maxWidth)
 
@@ -147,13 +133,10 @@ fun VerticalDeck(
 
                     var yPosition = startPadding.toInt()
                     placeables.forEach { placeable ->
-                        // Calculate the center of the item relative to the layout's content
                         val itemCenterY = yPosition + placeable.height / 2f
-                        
-                        // Calculate distance from viewport center
+
                         val distanceFromCenter = abs(viewportCenterY - itemCenterY)
-                        
-                        // Normalize distance to a scale factor (1.0 at center, minScale at edges)
+
                         val maxDistance = viewportHeightPx / 2f
                         val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
                         val scale = 1f - (fraction * (1f - minScale))
@@ -162,7 +145,6 @@ fun VerticalDeck(
                             scaleX = scale
                             scaleY = scale
                         }
-                        // Next item starts 50% into the current item
                         yPosition += (placeable.height * 0.5f).toInt()
                     }
                 }

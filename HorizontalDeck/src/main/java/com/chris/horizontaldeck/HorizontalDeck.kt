@@ -21,11 +21,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
@@ -33,13 +38,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
-import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 
 /**
  * A custom layout that arranges its children in a horizontal deck with overlapping cards.
@@ -69,15 +67,12 @@ fun HorizontalDeck(
     onItemSelected: (Int) -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    // Track target scroll positions for snapping
     val snapPoints = remember { mutableStateListOf<Int>() }
     var lastSelectedIndex by remember { mutableIntStateOf(-1) }
 
-    // Snapping logic: Triggered when scrolling stops
     LaunchedEffect(scrollState.isScrollInProgress) {
         if (!scrollState.isScrollInProgress && snapPoints.isNotEmpty() && cardSelectionEnabled) {
             val currentScroll = scrollState.value
-            // Find the snap point closest to the current scroll position
             val closestSnapPoint = snapPoints.minByOrNull { abs(it - currentScroll) }
             val index = snapPoints.indexOf(closestSnapPoint)
 
@@ -87,85 +82,71 @@ fun HorizontalDeck(
 
             if (index != -1 && index != lastSelectedIndex) {
                 lastSelectedIndex = index
-                if (cardSelectionEnabled) {
-                    onItemSelected(index)
-                }
+                onItemSelected(index)
             }
         }
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val viewportWidth = constraints.maxWidth
+        val viewportWidthPx = constraints.maxWidth
 
-        Layout(
-            content = content,
+        Box(
             modifier = Modifier
+                .size(maxWidth, maxHeight)
                 .horizontalScroll(scrollState)
-        ) { measurables, constraints ->
-            // Measure each child with unconstrained width to respect their preferred size
-            val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-            val placeables = measurables.map { it.measure(childConstraints) }
+        ) {
+            Layout(
+                content = content
+            ) { measurables, constraints ->
+                val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+                val placeables = measurables.map { it.measure(childConstraints) }
 
-            val firstCardWidth = placeables.firstOrNull()?.width ?: 0
-            val lastCardWidth = placeables.lastOrNull()?.width ?: 0
+                val firstCardWidth = placeables.firstOrNull()?.width ?: 0
+                val lastCardWidth = placeables.lastOrNull()?.width ?: 0
 
-            // Calculate internal paddings to allow first/last cards to reach center
-            val startPadding = (viewportWidth - firstCardWidth) / 2f
-            val endPadding = (viewportWidth - lastCardWidth) / 2f
+                val startPadding = (viewportWidthPx - firstCardWidth) / 2f
+                val endPadding = (viewportWidthPx - lastCardWidth) / 2f
 
-            // Calculate content width with 50% overlap
-            var contentWidth = 0
-            val tempSnapPoints = mutableListOf<Int>()
-
-            placeables.forEachIndexed { index, placeable ->
-                val xPos = startPadding + contentWidth
-                // A card is centered when scroll = xPos - (viewportWidth - cardWidth) / 2
-                tempSnapPoints.add((xPos - (viewportWidth - placeable.width) / 2f).toInt())
-
-                if (index == 0) {
-                    contentWidth += placeable.width
-                } else {
-                    contentWidth += (placeable.width * 0.5f).toInt()
-                }
-            }
-
-            // Update global snap points (without triggering unnecessary recomposition during layout)
-            if (snapPoints.size != tempSnapPoints.size || !snapPoints.indices.all { snapPoints[it] == tempSnapPoints[it] }) {
-                snapPoints.clear()
-                snapPoints.addAll(tempSnapPoints)
-            }
-
-            // Total layout width includes start padding, overlapped content, and end padding
-            val totalWidth = (startPadding + contentWidth + endPadding).toInt()
-                .coerceAtLeast(constraints.minWidth)
-
-            // Calculate layout height as the maximum height of any child
-            val layoutHeight = (placeables.maxOfOrNull { it.height } ?: 0)
-                .coerceIn(constraints.minHeight, constraints.maxHeight)
-
-            layout(totalWidth, layoutHeight) {
-                val scrollX = scrollState.value
-                val viewportCenterX = scrollX + viewportWidth / 2f
-
-                var xPosition = startPadding.toInt()
+                val tempSnapPoints = mutableListOf<Int>()
+                var currentX = startPadding
+                
                 placeables.forEach { placeable ->
-                    // Calculate the center of the item relative to the layout's content
-                    val itemCenterX = xPosition + placeable.width / 2f
+                    tempSnapPoints.add((currentX - (viewportWidthPx - placeable.width) / 2f).toInt())
 
-                    // Calculate distance from viewport center
-                    val distanceFromCenter = abs(viewportCenterX - itemCenterX)
+                    currentX += (placeable.width * 0.5f).toInt()
+                }
 
-                    // Normalize distance to a scale factor (1.0 at center, minScale at edges)
-                    val maxDistance = viewportWidth / 2f
-                    val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
-                    val scale = 1f - (fraction * (1f - minScale))
+                if (snapPoints.size != tempSnapPoints.size || !snapPoints.indices.all { snapPoints[it] == tempSnapPoints[it] }) {
+                    snapPoints.clear()
+                    snapPoints.addAll(tempSnapPoints)
+                }
 
-                    placeable.placeRelativeWithLayer(x = xPosition, y = 0, zIndex = scale) {
-                        scaleX = scale
-                        scaleY = scale
+                val totalWidth = (currentX + (lastCardWidth * 0.5f) + endPadding).toInt()
+                    .coerceAtLeast(constraints.minWidth)
+
+                val layoutHeight = (placeables.maxOfOrNull { it.height } ?: 0)
+                    .coerceIn(constraints.minHeight, constraints.maxHeight)
+
+                layout(totalWidth, layoutHeight) {
+                    val scrollX = scrollState.value
+                    val viewportCenterX = scrollX + viewportWidthPx / 2f
+
+                    var xPosition = startPadding.toInt()
+                    placeables.forEach { placeable ->
+                        val itemCenterX = xPosition + placeable.width / 2f
+
+                        val distanceFromCenter = abs(viewportCenterX - itemCenterX)
+
+                        val maxDistance = viewportWidthPx / 2f
+                        val fraction = (distanceFromCenter / maxDistance).coerceIn(0f, 1f)
+                        val scale = 1f - (fraction * (1f - minScale))
+
+                        placeable.placeRelativeWithLayer(x = xPosition, y = 0, zIndex = scale) {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        xPosition += (placeable.width * 0.5f).toInt()
                     }
-                    // Next item starts 50% into the current item
-                    xPosition += (placeable.width * 0.5f).toInt()
                 }
             }
         }
