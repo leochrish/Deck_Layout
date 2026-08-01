@@ -43,7 +43,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    implementation("io.github.leochrish:horizontal-deck:1.0.0")
+    implementation(project(":HorizontalDeck"))
+    implementation(project(":VerticalDeck"))
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

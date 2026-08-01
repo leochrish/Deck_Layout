@@ -21,8 +21,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chris.decklayout.ui.theme.DeckLayoutTheme
 import com.chris.horizontaldeck.HorizontalDeck
+import com.chris.verticaldeck.VerticalDeck
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,30 +52,57 @@ class MainActivity : ComponentActivity() {
             DeckLayoutTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val context = LocalContext.current
-                    Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                        val scrollState = rememberScrollState()
+                    Column(modifier = Modifier
+                        .padding(innerPadding)
+                        .fillMaxSize()) {
+                        Text(
+                            text = "Horizontal Deck",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        val horizontalScrollState = rememberScrollState()
                         HorizontalDeck(
-                            scrollState = scrollState,
+                            scrollState = horizontalScrollState,
                             minScale = 0.65f,
                             cardSelectionEnabled = true,
                             onItemSelected = { index ->
-                                Toast.makeText(context, "Selected Card: ${index + 1}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Horizontal Selected: ${index + 1}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(260.dp)
                         ) {
-                            val colors = listOf(
-                                Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7),
-                                Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF03A9F4),
-                                Color(0xFF00BCD4), Color(0xFF009688), Color(0xFF4CAF50),
-                                Color(0xFF8BC34A), Color(0xFFCDDC39), Color(0xFFFFEB3B)
-                            )
-                            colors.forEachIndexed { index, color ->
-                                DeckCard(
-                                    title = "Card ${index + 1}",
-                                    description = "This is the description for card number ${index + 1}. It has some interesting content.",
-                                    backgroundColor = color
-                                )
-                            }
+                            SampleCardsHorizontal()
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Text(
+                            text = "Vertical Deck",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        val verticalScrollState = rememberScrollState()
+                        VerticalDeck(
+                            scrollState = verticalScrollState,
+                            minScale = 0.65f,
+                            cardSelectionEnabled = true,
+                            onItemSelected = { index: Int ->
+                                Toast.makeText(
+                                    context,
+                                    "Vertical Selected: ${index + 1}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            SampleCardsVertical()
                         }
                     }
                 }
@@ -86,7 +112,78 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DeckCard(title: String, description: String, backgroundColor: Color) {
+fun SampleCardsHorizontal() {
+    val colors = listOf(
+        Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7),
+        Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF03A9F4),
+        Color(0xFF00BCD4), Color(0xFF009688), Color(0xFF4CAF50),
+        Color(0xFF8BC34A), Color(0xFFCDDC39), Color(0xFFFFEB3B)
+    )
+    colors.forEachIndexed { index, color ->
+        DeckCardHorizontal(
+            title = "Card ${index + 1}",
+            description = "Description for card ${index + 1}.",
+            backgroundColor = color
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SampleCardsHorizontalPreview() {
+    SampleCardsHorizontal()
+}
+
+@Composable
+fun SampleCardsVertical() {
+    val colors = listOf(
+        Color(0xFFE91E63), Color(0xFF9C27B0), Color(0xFF673AB7),
+        Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF03A9F4),
+        Color(0xFF00BCD4), Color(0xFF009688), Color(0xFF4CAF50),
+        Color(0xFF8BC34A), Color(0xFFCDDC39), Color(0xFFFFEB3B)
+    )
+    colors.forEachIndexed { index, color ->
+        DeckCardVertical(
+            title = "Card ${index + 1}",
+            description = "Description for card ${index + 1}.",
+            backgroundColor = color
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SampleCardsVerticalPreview() {
+    SampleCardsVertical()
+}
+
+@Composable
+fun DeckCardVertical(title: String, description: String, backgroundColor: Color) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
+
+@Composable
+fun DeckCardHorizontal(title: String, description: String, backgroundColor: Color) {
     Card(
         modifier = Modifier
             .size(width = 160.dp, height = 240.dp),
