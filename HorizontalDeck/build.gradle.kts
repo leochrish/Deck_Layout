@@ -57,7 +57,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "io.github.leochrish"
             artifactId = "horizontal-deck"
-            version = "1.0.3"
+            version = "1.0.4"
 
             afterEvaluate {
                 from(components["release"])
