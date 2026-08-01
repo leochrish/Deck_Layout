@@ -31,8 +31,17 @@ jobs:
 
       - name: Zip the bundle
         run: |
-          cd HorizontalDeck/build/staging-repo
-          zip -r ../../../bundle.zip io
+          mkdir -p bundle_root
+          # Copy HorizontalDeck artifacts
+          if [ -d "HorizontalDeck/build/staging-repo/io" ]; then
+            cp -r HorizontalDeck/build/staging-repo/io bundle_root/
+          fi
+          # Copy VerticalDeck artifacts
+          if [ -d "VerticalDeck/build/staging-repo/io" ]; then
+            cp -r VerticalDeck/build/staging-repo/io bundle_root/
+          fi
+          cd bundle_root
+          zip -r ../bundle.zip io
 
       - name: Upload to Sonatype Central
         env:
@@ -40,6 +49,6 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           curl -u "$SONATYPE_USERNAME:$SONATYPE_PASSWORD" \
-               -X POST "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC&name=HorizontalDeck-Release-${{ github.run_number }}" \
+               -X POST "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC&name=DeckLayout-Release-${{ github.run_number }}" \
                -H "Accept: application/json" \
                -F "bundle=@bundle.zip"
